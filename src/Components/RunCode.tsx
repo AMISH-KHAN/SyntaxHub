@@ -31,6 +31,7 @@ export default function RunCode({ editorRef, language }: ChildProps) {
       const {run: result }  = await executeCode(language, sourceCode)
       if (result.stderr) {
         setError(true)
+        console.log(error)
         setOutput(result.stderr)
       }
       else {

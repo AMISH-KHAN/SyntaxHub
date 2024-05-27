@@ -1,7 +1,5 @@
 
-import { useState } from "react"
 import CodeEditor from "./Components/CodeEditor"
-import LanguagesSupp from "./Components/LanguagesSupp"
 
 function App() {
 

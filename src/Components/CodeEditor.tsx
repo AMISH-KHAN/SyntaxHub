@@ -4,10 +4,7 @@ import * as monaco from 'monaco-editor';
 import RunCode from './RunCode';
 import { CODE_SNIPPETS } from '../Constant';
 import LanguagesSupp from './LanguagesSupp';
-interface ChildProps {
-  language: string;
-  defaultValue: string;
-}
+
 
 const CodeEditor= () => {
   const [language,setLanguage]=useState<string>("javascript")
@@ -55,7 +52,7 @@ const CodeEditor= () => {
             className='h-[20rem] md:h-[90dvh]'
         />
       </div>
-      <div className='  w-full md:w-1/2 '>
+      <div className='  w-full md:w-1/2  '>
           <RunCode editorRef={ editorRef} language={language} />
         </div>
         </div>
