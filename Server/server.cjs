@@ -1,23 +1,20 @@
 const express = require('express');
 const { createServer } = require('node:http');
 const cors=require('cors')
-const { Server} = require('socket.io')
+const { Server} = require('socket.io');
+const { join } = require('node:path');
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173"
-  }
-});
+const io = new Server(server);
 
 
 app.use(cors())
 
-
+app.use(express.static(join(__dirname, "../dist/")));
 
 app.get('/', (req, res) => {
-  res.send('<h1>Hello world</h1>');
+  res.sendFile(join(__dirname,"../dist/index.html"))
 });
 
 
@@ -35,11 +32,9 @@ io.on('connection', (socket) => {
   // socket.emit("hello", socket.id);
   socket.on("join", ({ roomId, userName }) => {
     userMap[socket.id] = userName
-    console.log("join")
     socket.join(roomId)
     // console.log(userName)
     const clients = getClientData(roomId)
-    console.log(clients)
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit("joined", {
         clients,
@@ -60,11 +55,9 @@ io.on('connection', (socket) => {
     })
     
     socket.on("change_lang", ({ selected, defaultValue, roomId }) => {
-      // console.log("data",selected,defaultValue)
       socket.in(roomId).emit("change_lang", {selected,defaultValue })
       })
         socket.on("sync_lang", ({ socketId, code,language }) => {
-          console.log(language)
           io.to(socketId).emit("change_lang", {selected:language,defaultValue:code})
           
         })
