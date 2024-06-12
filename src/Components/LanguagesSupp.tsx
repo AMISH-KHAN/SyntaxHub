@@ -1,13 +1,12 @@
 import { LANGUAGE_VERSIONS } from '../Constant';
 import { useEffect, useState } from "react";
 import { CODE_SNIPPETS } from "../Constant"
-import * as monaco from 'monaco-editor';
 import { Socket } from 'socket.io-client';
 interface ChildProp{
     onData: (data: string,value:string) => void,
-    socketRef: Socket,
-    roomId: string,
-    socketId:string
+    socketRef: React.RefObject<Socket>,
+    roomId: string | undefined,
+    socketId:string | undefined
 }
 
 const LanguagesSupp: React.FC<ChildProp> = ({ onData ,socketRef,roomId,socketId}) => {

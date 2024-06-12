@@ -5,16 +5,12 @@ import RunCode from './RunCode';
 import { CODE_SNIPPETS } from '../Constant';
 import LanguagesSupp from './LanguagesSupp';
 import Avatar from 'react-avatar';
-import { Params, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {  useLocation, useNavigate, useParams } from 'react-router-dom';
 import copy from 'copy-to-clipboard';
 import toast, { Toaster } from 'react-hot-toast';
 import { initSocket } from '../Sockets';
 import { Socket } from 'socket.io-client';
 
-interface ChildProps {
-  language: string;
-  defaultValue: string;
-}
 
 
 
@@ -43,11 +39,8 @@ const CodeEditor = () => {
   }
 
   function handleLang(lang: string,value:string) {
-    // console.log("language", data)
     setLanguage(lang)
-    // console.log("value",value)
     setValue(value)
-    // console.log("clha")
     
   }
   
@@ -63,25 +56,25 @@ const CodeEditor = () => {
 
  
 
- function handleChange(code:string) {
-    setValue(code)
-    // socketRef.current = await initSocket()
- 
-    if (socketRef.current) {
-      // console.log(code)
-      socketRef.current.emit("change_code", {roomId, code })
-    }
+ function handleChange(code:string|undefined) {
+   if (code) {
+     setValue(code)
+      // socketRef.current = await initSocket()
+   
+      if (socketRef.current) {
+        socketRef.current.emit("change_code", {roomId, code })
+      }
+    
+  }
   }
 
   useEffect(() => {
 
     
     socketRef.current?.on("change_code", ( code  ) => {
-      // console.log("code from server",code)
         setValue(code)
       
     })
-    console.log("hllo")
    
   }, [socketRef.current,language])
   
@@ -94,7 +87,7 @@ const CodeEditor = () => {
   let socket :Socket|null;
   useEffect(() => {
     function handleErrors(e:Error) {
-        // console.log('socket error', e);
+        console.log('socket error', e);
         toast.error('Socket connection failed, try again later.');
         navigate("/")
     }
