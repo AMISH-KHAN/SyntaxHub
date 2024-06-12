@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react';
-import  { useRef, useState } from 'react';
+import  { useEffect, useRef, useState } from 'react';
 import * as monaco from 'monaco-editor';
 import RunCode from './RunCode';
 import { CODE_SNIPPETS } from '../Constant';
