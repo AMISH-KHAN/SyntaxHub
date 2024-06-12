@@ -41,13 +41,17 @@ export default function Join() {
             toast.error("Username required")
             return
         }
-        navigate("/editor/"+roomData.roomId)
+        navigate(`/editor/${roomData.roomId}`, {
+            state: {
+                userName:roomData.userName,
+            }
+        })
     }
   return (
     <>
           <div className=" w-screen h-screen text-white px-4 flex flex-col bg-[#091122] justify-center items-center">
           <div><Toaster/></div>
-              <div className='w-[40%] h-[33rem] bg-[#162d5c] flex flex-col  justify-center items-center rounded-md  shadow-[#000000] shadow-lg px-[3rem] py-[1rem]'>
+              <div className='md:w-[40%] h-[33rem] bg-[#162d5c] flex flex-col  justify-center items-center rounded-md  shadow-[#000000] shadow-lg md:px-[3rem] px-4 py-[1rem]'>
                   <h1 className='text-3xl'>Enter Room Id</h1>
                   <div className='w-full  mt-8'>
                       <input type="text" required className=' w-[100%]  rounded-md h-10 p-3 outline-none text-black ' value={roomData.roomId} name='roomId' onChange={ changeData} placeholder='Room Id'/>
@@ -55,7 +59,7 @@ export default function Join() {
                       
                   </div>
                   <button className=' my-8 bg-[#0f1c3a] hover:bg-[#0e1628] w-full py-2  rounded-md text-2xl' onClick={join}>Join</button>
-                  <h1>Dont Have Room id? <span className=' text-blue-700 underline cursor-pointer' onClick={createRoomId}>Create Room Id</span></h1>
+                  <h1 className='text-[14px] md:text-md'>Dont Have Room id? <span className=' text-blue-700 underline cursor-pointer' onClick={createRoomId}>Create Room Id</span></h1>
               </div>
           </div>
     </>

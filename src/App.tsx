@@ -2,19 +2,25 @@
 import { useState } from "react"
 import CodeEditor from "./Components/CodeEditor"
 import LanguagesSupp from "./Components/LanguagesSupp"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import Join from "./Pages/Join"
 
 function App() {
 
  
   return (
     <>
-      <div className=" w-screen px-4 flex flex-col bg-[#0b0e14]">
+     
+      <BrowserRouter>
+        <Routes>
+          <Route path={"/"} element={<Join/> } />
+          <Route path={"/editor/:roomId"} element={<CodeEditor/> } />
           
-        <div >
-        <CodeEditor  />
-        </div>
-      </div>
-    </>
+        </Routes> 
+      
+      
+      </BrowserRouter>
+      </>
   )
 }
 
