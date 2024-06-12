@@ -1,6 +1,5 @@
 
 import CodeEditor from "./Components/CodeEditor"
-import LanguagesSupp from "./Components/LanguagesSupp"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import Join from "./Pages/Join"
 
