@@ -18,7 +18,7 @@ app.use(cors())
 
 app.use(express.static(join(__dirname, "../dist/")));
 
-app.get('/', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(join(__dirname,"../dist/index.html"))
 });
 
