@@ -57,88 +57,61 @@ const CodeEditor = () => {
  
 
  function handleChange(code:string|undefined) {
-   if (code) {
+   if (code !== undefined) {
      setValue(code)
-      // socketRef.current = await initSocket()
-   
-      if (socketRef.current) {
-        socketRef.current.emit("change_code", {roomId, code })
-      }
-    
-  }
-  }
+     if (socketRef.current) {
+       socketRef.current.emit("change_code", {roomId, code })
+     }
+   }
+ }
 
-  useEffect(() => {
-
-    
-    socketRef.current?.on("change_code", ( code  ) => {
-        setValue(code)
-      
-    })
-   
-  }, [socketRef.current,language])
-  
-  // useEffect(() => {
-  //   if (socketRef.current) {
-      
-  //   }
-  // },[])
-
-  let socket :Socket|null;
   useEffect(() => {
     function handleErrors(e:Error) {
         console.log('socket error', e);
         toast.error('Socket connection failed, try again later.');
         navigate("/")
     }
-    // console.log("useeffect")
-    if (!socket) {
-      
-  
-      const init = async () => {
-        socketRef.current = await initSocket()
-        socketRef.current.on('connect_error', (err) => handleErrors(err));
-        socketRef.current.on('connect_failed', (err) => handleErrors(err));
 
-  
-        // console.log('connected to server with id:', socketRef.current?.id);
-        socketRef.current.emit("join", {
-          roomId,
-          userName: location.state?.userName
-        });
-        socketRef.current?.on("joined", ({clients,userName,socketId}) => {
-          // console.log("arg", args)
-          socketId=socketId
-          if (userName !== location.state?.userName) {
-            toast.success(`${userName} joined`)
-            }
-          setUsers(clients)
-          
-      socketRef.current?.emit("sync_code", { socketId,code:editorRef.current?.getValue() })
-       
-        })
-       
-      
-     
+    const init = async () => {
+      socketRef.current = await initSocket()
+      socketRef.current.on('connect_error', (err) => handleErrors(err));
+      socketRef.current.on('connect_failed', (err) => handleErrors(err));
 
-        socketRef.current?.on("disconnected", ({ socketId, userName }) => {
-          toast.success(`${userName} left`)
-          setUsers((prev) => {
-            return prev.filter((user)=>user.socketId!==socketId)
-          })
+      socketRef.current.emit("join", {
+        roomId,
+        userName: location.state?.userName
+      });
+
+      socketRef.current.on("change_code", (code: string) => {
+        setValue(code);
+      });
+
+      socketRef.current.on("joined", ({clients,userName,socketId}) => {
+        if (userName !== location.state?.userName) {
+          toast.success(`${userName} joined`)
+        }
+        setUsers(clients)
+        socketRef.current?.emit("sync_code", { socketId, code: editorRef.current?.getValue() })
+      })
+
+      socketRef.current.on("disconnected", ({ socketId, userName }) => {
+        toast.success(`${userName} left`)
+        setUsers((prev) => {
+          return prev.filter((user)=>user.socketId!==socketId)
         })
-      }
-      init()
+      })
     }
+    init()
+
     return () => {
       if (socketRef.current) {
         socketRef.current.off('connect_error', handleErrors);
         socketRef.current.off('connect_failed', handleErrors);
+        socketRef.current.off('change_code');
         socketRef.current.off('joined');
         socketRef.current.off('disconnected');
         socketRef.current.disconnect();
         console.log('cleanup and disconnected socket');
-        socket = null; // Ensure the global socket is reset on cleanup
       }
     };
   },[])

@@ -1,12 +1,12 @@
 import { io } from 'socket.io-client';
 
 export const initSocket = async () => {
+    const backendUrl = import.meta.env.VITE_APP_BACKEND_URL || "http://localhost:3000";
     const options = {
-        'force new connection': true,
-        reconnectionAttempt: 'Infinity',
+        forceNew: true,
+        reconnectionAttempts: Infinity,
         timeout: 10000,
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
     };
-    return io(options);
-
+    return io(backendUrl, options);
 };
