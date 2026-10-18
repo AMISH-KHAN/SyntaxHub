@@ -51,6 +51,7 @@ const CodeEditor = () => {
   const [language, setLanguage] = useState<string>("javascript");
   const [show, setShow] = useState(false);
   const [users, setUsers] = useState<userDataType[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -140,13 +141,12 @@ const CodeEditor = () => {
 
   function handleLang(lang: string, newSnippet?: string) {
     setLanguage(lang);
-    if (newSnippet && ydocRef.current) {
+    if (newSnippet !== undefined && ydocRef.current) {
       const ytext = ydocRef.current.getText('monaco');
-      if (ytext.length === 0) {
-        ydocRef.current.transact(() => {
-          ytext.insert(0, newSnippet);
-        });
-      }
+      ydocRef.current.transact(() => {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, newSnippet);
+      });
     }
   }
 
@@ -194,6 +194,7 @@ const CodeEditor = () => {
     const init = async () => {
       const socket = await initSocket();
       socketRef.current = socket;
+      setSocket(socket);
 
       socket.on('connect_error', (err) => handleErrors(err));
       socket.on('connect_failed', (err) => handleErrors(err));
@@ -369,7 +370,7 @@ const CodeEditor = () => {
         <div className="w-[95%] md:w-1/2 ml-2">
           <LanguagesSupp
             onData={handleLang}
-            socketRef={socketRef}
+            socket={socket}
             roomId={roomId}
             language={language}
           />
@@ -396,7 +397,7 @@ const CodeEditor = () => {
             <RunCode
               editorRef={editorRef}
               language={language}
-              socketRef={socketRef}
+              socket={socket}
               roomId={roomId}
               userName={location.state?.userName}
             />

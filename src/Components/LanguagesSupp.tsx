@@ -1,17 +1,16 @@
 import { LANGUAGE_VERSIONS } from '../Constant';
 import { useEffect, useState } from "react";
-import { CODE_SNIPPETS } from "../Constant"
+import { CODE_SNIPPETS } from "../Constant";
 import { Socket } from 'socket.io-client';
 
 interface ChildProp {
     onData: (data: string, value?: string) => void;
-    socketRef: React.RefObject<Socket | null>;
+    socket: Socket | null;
     roomId: string | undefined;
-    socketId?: string | undefined;
     language?: string;
 }
 
-const LanguagesSupp: React.FC<ChildProp> = ({ onData, socketRef, roomId, language = 'javascript' }) => {
+const LanguagesSupp: React.FC<ChildProp> = ({ onData, socket, roomId, language = 'javascript' }) => {
     const [selectedLanguage, setSelectedLanguage] = useState(language);
 
     useEffect(() => {
@@ -23,21 +22,23 @@ const LanguagesSupp: React.FC<ChildProp> = ({ onData, socketRef, roomId, languag
         const defaultValue = CODE_SNIPPETS[selected as keyof typeof CODE_SNIPPETS];
         setSelectedLanguage(selected);
         onData(selected, defaultValue);
-        socketRef.current?.emit("change_lang", { selected, defaultValue, roomId, updateCode: false });
+        socket?.emit("change_lang", { selected, defaultValue, roomId });
     };
 
     useEffect(() => {
+        if (!socket) return;
+
         const handleLangChange = ({ selected }: { selected: string }) => {
             setSelectedLanguage(selected);
             onData(selected);
         };
 
-        socketRef.current?.on("change_lang", handleLangChange);
+        socket.on("change_lang", handleLangChange);
 
         return () => {
-            socketRef.current?.off("change_lang", handleLangChange);
+            socket.off("change_lang", handleLangChange);
         };
-    }, [socketRef, onData]);
+    }, [socket, onData]);
 
     return (
         <select

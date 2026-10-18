@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 interface ChildProps {
   language: string;
   editorRef: React.MutableRefObject<monaco.editor.IStandaloneCodeEditor | null>;
-  socketRef?: React.RefObject<Socket | null>;
+  socket: Socket | null;
   roomId?: string;
   userName?: string;
 }
@@ -19,14 +19,13 @@ const override: CSSProperties = {
   borderColor: "#252596",
 };
 
-export default function RunCode({ editorRef, language, socketRef, roomId, userName }: ChildProps) {
+export default function RunCode({ editorRef, language, socket, roomId, userName }: ChildProps) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ranBy, setRanBy] = useState<string>("");
 
   useEffect(() => {
-    const socket = socketRef?.current;
     if (!socket) return;
 
     const handleRunStart = ({ userName: runner }: { userName: string }) => {
@@ -60,7 +59,7 @@ export default function RunCode({ editorRef, language, socketRef, roomId, userNa
       socket.off("code_run_result", handleRunResult);
       socket.off("yjs_init", handleInit);
     };
-  }, [socketRef]);
+  }, [socket]);
 
   async function runCode() {
     const sourceCode = editorRef.current?.getValue();
@@ -70,8 +69,8 @@ export default function RunCode({ editorRef, language, socketRef, roomId, userNa
       setLoading(true);
       setRanBy("You");
 
-      if (socketRef?.current && roomId) {
-        socketRef.current.emit("code_run_start", {
+      if (socket && roomId) {
+        socket.emit("code_run_start", {
           roomId,
           userName: userName || "A collaborator",
         });
@@ -92,8 +91,8 @@ export default function RunCode({ editorRef, language, socketRef, roomId, userNa
       setError(isError);
       setOutput(finalOutput);
 
-      if (socketRef?.current && roomId) {
-        socketRef.current.emit("code_run_result", {
+      if (socket && roomId) {
+        socket.emit("code_run_result", {
           roomId,
           output: finalOutput,
           error: isError,
@@ -110,8 +109,8 @@ export default function RunCode({ editorRef, language, socketRef, roomId, userNa
       const finalOutput = `Error: ${errMsg}`;
       setOutput(finalOutput);
 
-      if (socketRef?.current && roomId) {
-        socketRef.current.emit("code_run_result", {
+      if (socket && roomId) {
+        socket.emit("code_run_result", {
           roomId,
           output: finalOutput,
           error: true,
