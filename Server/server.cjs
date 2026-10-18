@@ -23,64 +23,116 @@ app.get('*', (req, res) => {
 });
 
 
-const userMap={}
-function getClientData(roomId){
-  return Array.from(io.sockets.adapter.rooms.get(roomId)||[]).map((socketId) => {
+const Y = require('yjs');
+
+const userMap = {};
+const socketClientIdMap = {};
+const roomDocs = new Map(); // roomId -> { doc: Y.Doc, language: string }
+
+function getOrCreateRoom(roomId) {
+  if (!roomDocs.has(roomId)) {
+    const doc = new Y.Doc();
+    const ytext = doc.getText('monaco');
+    const defaultCode = `// Welcome to SyntaxHub Collaborative Editor\n// Room ID: ${roomId}\n\nfunction helloWorld() {\n  console.log("Hello, collaborative world!");\n}\n\nhelloWorld();\n`;
+    ytext.insert(0, defaultCode);
+    roomDocs.set(roomId, { doc, language: 'javascript' });
+  }
+  return roomDocs.get(roomId);
+}
+
+function getClientData(roomId) {
+  return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map((socketId) => {
     return {
       socketId,
-      userName:userMap[socketId]
-        }
-      })
+      userName: userMap[socketId],
+      clientId: socketClientIdMap[socketId]
+    };
+  });
 }
 
 io.on('connection', (socket) => {
-  // socket.emit("hello", socket.id);
-  socket.on("join", ({ roomId, userName }) => {
-    userMap[socket.id] = userName
-    socket.join(roomId)
-    // console.log(userName)
-    const clients = getClientData(roomId)
+  socket.on("join", ({ roomId, userName, clientId }) => {
+    userMap[socket.id] = userName;
+    if (clientId !== undefined) {
+      socketClientIdMap[socket.id] = clientId;
+    }
+    socket.join(roomId);
+
+    const roomData = getOrCreateRoom(roomId);
+
+    // Send initial Yjs document state and active language
+    const stateVector = Y.encodeStateAsUpdate(roomData.doc);
+    socket.emit("yjs_init", {
+      update: Buffer.from(stateVector),
+      language: roomData.language
+    });
+
+    const clients = getClientData(roomId);
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit("joined", {
         clients,
         userName,
-        socketId:socket.id
-      })
-    })
-    // socket.in(roomId).emit("joined",userName )
-    socket.on("change_code", ({ roomId, code }) => {
-      // console.log(code)
-      socket.in(roomId).emit("change_code", code)
-      
-    })
-    socket.on("sync_code", ({ socketId, code }) => {
-      // console.log(code)
-      io.to(socketId).emit("change_code", code)
-      
-    })
-    
-    socket.on("change_lang", ({ selected, defaultValue, roomId }) => {
-      socket.in(roomId).emit("change_lang", {selected,defaultValue })
-      })
-        socket.on("sync_lang", ({ socketId, code,language }) => {
-          io.to(socketId).emit("change_lang", {selected:language,defaultValue:code})
-          
-        })
-  })
+        socketId: socket.id,
+        clientId
+      });
+    });
+  });
+
+  // Handle Yjs document binary CRDT updates
+  socket.on("yjs_update", ({ roomId, update }) => {
+    const roomData = roomDocs.get(roomId);
+    if (roomData && update) {
+      try {
+        const updateArray = new Uint8Array(update);
+        Y.applyUpdate(roomData.doc, updateArray);
+        socket.to(roomId).emit("yjs_update", update);
+      } catch (err) {
+        console.error("Error applying Yjs update on server:", err);
+      }
+    }
+  });
+
+  // Relay awareness / cursor positions to other peers in the room
+  socket.on("yjs_awareness_update", ({ roomId, update }) => {
+    if (roomId && update) {
+      socket.to(roomId).emit("yjs_awareness_update", update);
+    }
+  });
+
+  // Handle language switch
+  socket.on("change_lang", ({ selected, defaultValue, roomId, updateCode }) => {
+    const roomData = roomDocs.get(roomId);
+    if (roomData) {
+      roomData.language = selected;
+      if (updateCode && defaultValue) {
+        const ytext = roomData.doc.getText('monaco');
+        roomData.doc.transact(() => {
+          ytext.delete(0, ytext.length);
+          ytext.insert(0, defaultValue);
+        });
+        const update = Y.encodeStateAsUpdate(roomData.doc);
+        io.to(roomId).emit("yjs_update", Buffer.from(update));
+      }
+    }
+    socket.to(roomId).emit("change_lang", { selected });
+  });
 
   socket.on("disconnecting", () => {
-    const rooms = [...socket.rooms]
-    
+    const rooms = [...socket.rooms];
+    const clientId = socketClientIdMap[socket.id];
+
     rooms.forEach((roomId) => {
       socket.in(roomId).emit("disconnected", {
-        socketId:socket.id,
-        userName:userMap[socket.id]
-      })
-    })
-    delete userMap[socket.id]
-    socket.leave()
-  })
-})
+        socketId: socket.id,
+        userName: userMap[socket.id],
+        clientId
+      });
+    });
+    delete userMap[socket.id];
+    delete socketClientIdMap[socket.id];
+    socket.leave();
+  });
+});
 
 const port = process.env.PORT || 3000
 
