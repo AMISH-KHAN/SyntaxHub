@@ -60,11 +60,12 @@ io.on('connection', (socket) => {
 
     const roomData = getOrCreateRoom(roomId);
 
-    // Send initial Yjs document state and active language
+    // Send initial Yjs document state, active language, and last output if any
     const stateVector = Y.encodeStateAsUpdate(roomData.doc);
     socket.emit("yjs_init", {
       update: Buffer.from(stateVector),
-      language: roomData.language
+      language: roomData.language,
+      lastOutput: roomData.lastOutput || null
     });
 
     const clients = getClientData(roomId);
@@ -76,6 +77,20 @@ io.on('connection', (socket) => {
         clientId
       });
     });
+  });
+
+  // Broadcast code execution start to room
+  socket.on("code_run_start", ({ roomId, userName }) => {
+    socket.to(roomId).emit("code_run_start", { userName });
+  });
+
+  // Broadcast code execution result to room
+  socket.on("code_run_result", ({ roomId, output, error, ranBy }) => {
+    const roomData = roomDocs.get(roomId);
+    if (roomData) {
+      roomData.lastOutput = { output, error, ranBy };
+    }
+    socket.to(roomId).emit("code_run_result", { output, error, ranBy });
   });
 
   // Handle Yjs document binary CRDT updates

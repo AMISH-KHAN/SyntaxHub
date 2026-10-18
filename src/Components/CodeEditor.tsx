@@ -393,7 +393,13 @@ const CodeEditor = () => {
 
         <div className="flex flex-col w-full md:w-1/2">
           <div className="w-full overflow-auto">
-            <RunCode editorRef={editorRef} language={language} />
+            <RunCode
+              editorRef={editorRef}
+              language={language}
+              socketRef={socketRef}
+              roomId={roomId}
+              userName={location.state?.userName}
+            />
           </div>
         </div>
       </div>
